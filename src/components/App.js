@@ -41,7 +41,9 @@ class App extends Component {
         .call();
       this.setState({ daiTokenBalance: daiTokenBalance.toString() });
     } else {
-      window.alert("USDC Token contract not deployed to detected network.");
+      window.alert(
+        "USDC Token contract not deployed to detected network.  Connet to (rinkeby)"
+      );
     }
 
     // Load DappToken
@@ -61,7 +63,9 @@ class App extends Component {
         eb: eb,
       });
     } else {
-      window.alert("INRC Token contract not deployed to detected network.");
+      window.alert(
+        "INRC Token contract not deployed to detected network. Connet to (rinkeby)"
+      );
     }
 
     // Load TokenFarm
@@ -78,7 +82,9 @@ class App extends Component {
       //   .call();
       // this.setState({ stakingBalance: stakingBalance.toString() });
     } else {
-      window.alert("StakeFarm contract not deployed to detected network.");
+      window.alert(
+        "StakeFarm contract not deployed to detected network. Connet to  (rinkeby)"
+      );
     }
 
     this.setState({ loading: false });
