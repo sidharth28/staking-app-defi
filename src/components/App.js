@@ -17,7 +17,14 @@ class App extends Component {
     const web3 = window.web3;
 
     const accounts = await web3.eth.getAccounts();
-    this.setState({ account: accounts[0] });
+    const gasPrice = await window.web3.eth.getGasPrice();
+    const eb = await web3.eth.getBalance(accounts[0]);
+    console.log("eb", eb.toString());
+
+    this.setState({
+      account: accounts[0],
+      gasPrice: gasPrice,
+    });
 
     const networkId = await web3.eth.net.getId();
 
@@ -48,7 +55,11 @@ class App extends Component {
       let dappTokenBalance = await dappToken.methods
         .balanceOf(this.state.account)
         .call();
-      this.setState({ dappTokenBalance: dappTokenBalance.toString() });
+      console.log("eb1", eb);
+      this.setState({
+        dappTokenBalance: dappTokenBalance.toString(),
+        eb: eb,
+      });
     } else {
       window.alert("INRC Token contract not deployed to detected network.");
     }
@@ -86,29 +97,59 @@ class App extends Component {
     }
   }
 
-  stakeTokens = (amount) => {
+  stakeTokens = async (amount) => {
+    console.log("this.state.gasPrice11", this.state.gasPrice);
     this.setState({ loading: true });
     this.state.daiToken.methods
       .approve(this.state.tokenFarm._address, amount)
-      .send({ from: this.state.account })
-      .on("transactionHash", (hash) => {
+      .send({
+        from: this.state.account,
+        gasPrice: this.state.gasPrice * 4,
+      })
+      .on("receipt", (hash) => {
         this.state.tokenFarm.methods
           .stakeTokens(amount)
-          .send({ from: this.state.account })
-          .on("transactionHash", (hash) => {
+          .send({
+            from: this.state.account,
+            gasPrice: this.state.gasPrice * 4,
+          })
+          .on("receipt", (hash) => {
             this.setState({ loading: false });
+            this.loadBlockchainData();
           });
       });
   };
 
   unstakeTokens = (amount) => {
     this.setState({ loading: true });
-    this.state.tokenFarm.methods
-      .redeemTokens(amount)
-      .send({ from: this.state.account })
-      .on("transactionHash", (hash) => {
-        this.setState({ loading: false });
+
+    this.state.dappToken.methods
+      .approve(this.state.tokenFarm._address, amount)
+      .send({
+        from: this.state.account,
+        gasPrice: this.state.gasPrice * 4,
+      })
+      // .on("transactionHash", function (hash) {
+      //   // this.setState({ pw: "false" });
+      // })
+      .on("receipt", (hash) => {
+        this.state.tokenFarm.methods
+          .redeemTokens(amount)
+          .send({
+            from: this.state.account,
+            gasPrice: this.state.gasPrice * 4,
+          })
+          .on("receipt", (hash) => {
+            this.setState({ loading: false });
+            this.loadBlockchainData();
+          });
       });
+    // this.state.tokenFarm.methods
+    //   .redeemTokens(amount)
+    //   .send({ from: this.state.account, gasPrice: this.state.gasPrice * 4 })
+    //   .on("transactionHash", (hash) => {
+    //     this.setState({ loading: false });
+    //   });
   };
 
   constructor(props) {
@@ -121,7 +162,9 @@ class App extends Component {
       daiTokenBalance: "0",
       dappTokenBalance: "0",
       stakingBalance: "0",
-      loading: true,
+      loading: false,
+      eb: "0",
+      pw: "",
     };
   }
 
@@ -129,9 +172,14 @@ class App extends Component {
     let content;
     if (this.state.loading) {
       content = (
-        <p id="loader" className="text-center">
-          Loading...
-        </p>
+        <div
+          id="loader"
+          className="text-center"
+          style={{ "font-size": "50px", padding: "100px" }}
+        >
+          <h3>Please wait !!!</h3>
+          <h4>Waiting for transaction to confirm !!!</h4>
+        </div>
       );
     } else {
       content = (
@@ -141,6 +189,8 @@ class App extends Component {
           stakingBalance={this.state.stakingBalance}
           stakeTokens={this.stakeTokens}
           unstakeTokens={this.unstakeTokens}
+          eb={this.state.eb}
+          pw={this.state.pw}
         />
       );
     }
